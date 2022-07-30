@@ -14,13 +14,14 @@ class Minesweeper extends Component
     public $bombSpawnChance = 15;
     public $greed = [];
     public $isDebug = 0;
+    public $mode = 'explore';
 
     public $gameStatus;
 
     public function rules()
     {
         return [
-            'inputHeight' => ['integer', 'max:40' , 'min:5'],
+            'inputHeight' => ['integer', 'max:40', 'min:5'],
             'inputWidth' => ['integer', 'max:40', 'min:5']
         ];
     }
@@ -111,8 +112,8 @@ class Minesweeper extends Component
                 }
             }
             //Сщитаем ячейку слева внизу
-            if ($key + $this->width - 1 >= 0) {
-                if ($key + $this->width - 1 <= count($this->greed) - 1) {
+            if ($key + $this->width - 1 <= count($this->greed) - 1) {
+                if (!is_int($key / $this->width)) {
                     if ($this->greed[$key + $this->width - 1]['type'] == 'bomb') {
                         $countsOfBombsNearCell++;
                     }
@@ -120,8 +121,10 @@ class Minesweeper extends Component
             }
             //Сщитаем ячейку слева вверху
             if ($key - $this->width - 1 >= 0) {
-                if ($this->greed[$key - $this->width - 1]['type'] == 'bomb') {
-                    $countsOfBombsNearCell++;
+                if (!is_int($key / $this->width)) {
+                    if ($this->greed[$key - $this->width - 1]['type'] == 'bomb') {
+                        $countsOfBombsNearCell++;
+                    }
                 }
             }
             //Сщитаем ячейку справа вверху
@@ -148,91 +151,109 @@ class Minesweeper extends Component
         // if ($this->greed[$id]['type'] == 'flag') {
         //     continue;
         // }
-        //Если нажал на бомбу (((
-        if ($this->greed[$id]['type'] == 'bomb') {
-            foreach ($this->greed as $key => $cell) {
-                if ($cell['type'] == 'bomb') {
-                    $this->greed[$key]['isShown'] = true;
-                    $this->gameStatus = 'loose';
-                };
-            }
-        } elseif ($this->greed[$id]['type'] != '0') {
-            $this->greed[$id]['isShown'] = true;
-        } elseif ($this->greed[$id]['type'] == '0') {
-            //Сщитаем ячейку справа
-            $this->greed[$id]['isShown'] = true;
+        //блокирование функции если игра завершена проигрышем ил ипобедой
+        if ($this->gameStatus != 'running') {
+            return null;
+        }
+        //Если режим флагов
+        if ($this->mode == 'explore') {
+            //Если нажал на бомбу (((
+            if ($this->greed[$id]['type'] == 'bomb') {
+                foreach ($this->greed as $key => $cell) {
+                    if ($cell['type'] == 'bomb') {
+                        $this->greed[$key]['isShown'] = true;
+                        $this->gameStatus = 'loose';
+                    };
+                }
+            } elseif ($this->greed[$id]['type'] != '0') {
+                $this->greed[$id]['isShown'] = true;
+            } elseif ($this->greed[$id]['type'] == '0') {
+                //Сщитаем ячейку справа
+                $this->greed[$id]['isShown'] = true;
 
-            if ($id + 1 <= count($this->greed)) {
-                if ((($id + 1) % $this->width) != 0) {
-                    if ($this->greed[$id + 1]['type'] == '0' && $this->greed[$id + 1]['isShown'] == false) {
-                        $this->exploreCell($id + 1);
-                    } else {
-                        $this->greed[$id + 1]['isShown'] = true;
+                if ($id + 1 <= count($this->greed)) {
+                    if ((($id + 1) % $this->width) != 0) {
+                        if ($this->greed[$id + 1]['type'] == '0' && $this->greed[$id + 1]['isShown'] == false) {
+                            $this->exploreCell($id + 1);
+                        } else {
+                            $this->greed[$id + 1]['isShown'] = true;
+                        }
                     }
                 }
-            }
-            //Сщитаем ячейку слева
-            if ($id - 1 >= 0) {
-                if (!is_int($id / $this->width)) {
-                    if ($this->greed[$id - 1]['type'] == '0' && $this->greed[$id - 1]['isShown'] == false) {
-                        $this->exploreCell($id - 1);
-                    } else {
-                        $this->greed[$id - 1]['isShown'] = true;
+                //Сщитаем ячейку слева
+                if ($id - 1 >= 0) {
+                    if (!is_int($id / $this->width)) {
+                        if ($this->greed[$id - 1]['type'] == '0' && $this->greed[$id - 1]['isShown'] == false) {
+                            $this->exploreCell($id - 1);
+                        } else {
+                            $this->greed[$id - 1]['isShown'] = true;
+                        }
                     }
                 }
-            }
-            //Сщитаем ячейку сверху
-            if ($id - $this->width >= 0) {
-                if ($this->greed[$id - $this->width]['type'] == '0' && $this->greed[$id - $this->width]['isShown'] == false) {
-                    $this->exploreCell($id - $this->width);
-                } else {
-                    $this->greed[$id - $this->width]['isShown'] = true;
-                }
-            }
-            //Сщитаем ячейку снизу
-            if ($id + $this->width < count($this->greed)) {
-                if ($this->greed[$id + $this->width]['type'] == '0' && $this->greed[$id + $this->width]['isShown'] == false) {
-                    $this->exploreCell($id + $this->width);
-                } else {
-                    $this->greed[$id + $this->width]['isShown'] = true;
-                }
-            }
-            //Сщитаем ячейку справа внизу
-            if ($id + $this->width + 1 < count($this->greed)) {
-                if ((($id + 1) % $this->width) != 0) {
-                    if ($this->greed[$id + $this->width + 1]['type'] == '0' && $this->greed[$id + $this->width + 1]['isShown'] == false) {
-                        $this->exploreCell($id + $this->width + 1);
+                //Сщитаем ячейку сверху
+                if ($id - $this->width >= 0) {
+                    if ($this->greed[$id - $this->width]['type'] == '0' && $this->greed[$id - $this->width]['isShown'] == false) {
+                        $this->exploreCell($id - $this->width);
                     } else {
-                        $this->greed[$id + $this->width + 1]['isShown'] = true;
+                        $this->greed[$id - $this->width]['isShown'] = true;
                     }
                 }
-            }
-            //Сщитаем ячейку слева внизу
-            if ($id + $this->width - 1 >= 0) {
+                //Сщитаем ячейку снизу
+                if ($id + $this->width < count($this->greed)) {
+                    if ($this->greed[$id + $this->width]['type'] == '0' && $this->greed[$id + $this->width]['isShown'] == false) {
+                        $this->exploreCell($id + $this->width);
+                    } else {
+                        $this->greed[$id + $this->width]['isShown'] = true;
+                    }
+                }
+                //Сщитаем ячейку справа внизу
+                if ($id + $this->width + 1 < count($this->greed)) {
+                    if ((($id + 1) % $this->width) != 0) {
+                        if ($this->greed[$id + $this->width + 1]['type'] == '0' && $this->greed[$id + $this->width + 1]['isShown'] == false) {
+                            $this->exploreCell($id + $this->width + 1);
+                        } else {
+                            $this->greed[$id + $this->width + 1]['isShown'] = true;
+                        }
+                    }
+                }
+                //Сщитаем ячейку слева внизу
                 if ($id + $this->width - 1 <= count($this->greed) - 1) {
-                    if ($this->greed[$id + $this->width - 1]['type'] == '0' && $this->greed[$id + $this->width - 1]['isShown'] == false) {
-                        $this->exploreCell($id + $this->width - 1);
-                    } else {
-                        $this->greed[$id + $this->width - 1]['isShown'] = true;
+                    // if ($id + $this->width - 1 <= count($this->greed) - 1) {
+                    if (!is_int($id / $this->width)) {
+                        if ($this->greed[$id + $this->width - 1]['type'] == '0' && $this->greed[$id + $this->width - 1]['isShown'] == false) {
+                            $this->exploreCell($id + $this->width - 1);
+                        } else {
+                            $this->greed[$id + $this->width - 1]['isShown'] = true;
+                        }
+                    }
+                }
+                //Сщитаем ячейку слева вверху
+                if ($id - $this->width - 1 >= 0) {
+                    if (!is_int($id / $this->width)) {
+                        if ($this->greed[$id - $this->width - 1]['type'] == '0' && $this->greed[$id - $this->width - 1]['isShown'] == false) {
+                            $this->exploreCell($id - $this->width - 1);
+                        } else {
+                            $this->greed[$id - $this->width - 1]['isShown'] = true;
+                        }
+                    }
+                }
+                //Сщитаем ячейку справа вверху
+                if ($id - $this->height + 1 >= 0) {
+                    if ((($id + 1) % $this->width) != 0) {
+                        if ($this->greed[$id - $this->height + 1]['type'] == '0' && $this->greed[$id - $this->height + 1]['isShown'] == false) {
+                            $this->exploreCell($id - $this->height + 1);
+                        } else {
+                            $this->greed[$id - $this->height + 1]['isShown'] = true;
+                        }
                     }
                 }
             }
-            //Сщитаем ячейку слева вверху
-            if ($id - $this->width - 1 >= 0) {
-                if ($this->greed[$id - $this->width - 1]['type'] == '0' && $this->greed[$id - $this->width - 1]['isShown'] == false) {
-                    $this->exploreCell($id - $this->width - 1);
+        } else {
+            if ($this->greed[$id]['isShown'] == false) {
+                if ($this->greed[$id]['isFlagged'] == true) {
+                    $this->greed[$id]['isFlagged'] = false;
                 } else {
-                    $this->greed[$id - $this->width - 1]['isShown'] = true;
-                }
-            }
-            //Сщитаем ячейку справа вверху
-            if ($id - $this->height + 1 >= 0) {
-                if ((($id + 1) % $this->width) != 0) {
-                    if ($this->greed[$id - $this->height + 1]['type'] == '0' && $this->greed[$id - $this->height + 1]['isShown'] == false) {
-                        $this->exploreCell($id - $this->height + 1);
-                    } else {
-                        $this->greed[$id - $this->height + 1]['isShown'] = true;
-                    }
+                    $this->greed[$id]['isFlagged'] = true;
                 }
             }
         }

@@ -24,6 +24,8 @@
             <input wire:model="isDebug" class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
             <label class="form-check-label" for="flexSwitchCheckDefault">Debug</label>
         </div>
+        <button wire:click="$set('mode', 'explore')" type="button" @class(['btn', 'btn-outline-primary' => $mode != 'explore', 'btn-primary' => $mode == 'explore'])>Explore</button>
+        <button wire:click="$set('mode', 'flag')" type="button" @class(['btn', 'btn-outline-primary' => $mode != 'flag', 'btn-primary' => $mode == 'flag'])>Flags</button>
     </div>
     @foreach ($greed as $key => $cell)
         @if (is_int($loop->index / $width))
@@ -33,11 +35,11 @@
             <button type="button" class="btn {{ $gameStatus == 'win' ? 'btn-success' : 'btn-danger' }}" style="height: 45px; width: 45px;">💣</button>
         @endif
         @if ($cell['type'] == 'bomb' && $cell['isShown'] == false)
-            <button wire:click="exploreCell({{ $key }})" type="button" class="btn btn-secondary" style="height: 45px; width: 45px;"> </button>
+            <button wire:click="exploreCell({{ $key }})" type="button" class="btn btn-secondary" style="height: 45px; width: 45px;">{{$cell['isFlagged'] ? '🚩' : ' '}}</button>
         @endif
         {{-- <button wire:click="placeBomb({{$key}})" type="button" class="btn btn-light" style="height: 45px; width: 45px;">{{$cell['type']}}</button> --}}
         @if ($cell['type'] != 'bomb' && $cell['isShown'] == false)
-            <button wire:click="exploreCell({{ $key }})" type="button" class="btn btn-secondary" style="height: 45px; width: 45px;">{{ $isDebug == 1 ? $cell['type'] : '' }}</button>
+            <button wire:click="exploreCell({{ $key }})" type="button" class="btn btn-secondary" style="height: 45px; width: 45px;">{{ $isDebug == 1 ? $cell['type'] : '' }} {{$cell['isFlagged'] ? '🚩' : ''}}</button>
         @endif
         @if ($cell['type'] != 'bomb' && $cell['isShown'] == true)
             <button @class([
